@@ -14,6 +14,7 @@ interface ViewportState {
 interface EditorStoreState {
   selectedNodeId: string | null;
   activeSidebarTab: 'nodes' | 'assets' | 'profiler';
+  isSidebarOpen: boolean;
   isInspectorOpen: boolean;
   isCommandPaletteOpen: boolean;
   isNodeSearchOpen: boolean;
@@ -26,7 +27,10 @@ interface EditorStoreState {
   // Actions
   setSelectedNodeId: (id: string | null) => void;
   setActiveSidebarTab: (tab: 'nodes' | 'assets' | 'profiler') => void;
+  toggleSidebar: () => void;
+  setSidebarOpen: (open: boolean) => void;
   toggleInspector: () => void;
+  setInspectorOpen: (open: boolean) => void;
   setCommandPaletteOpen: (open: boolean) => void;
   setNodeSearchOpen: (open: boolean) => void;
   setExportModalOpen: (open: boolean) => void;
@@ -48,18 +52,22 @@ const DEFAULT_VIEWPORT: ViewportState = {
 export const useEditorStore = create<EditorStoreState>((set) => ({
   selectedNodeId: null,
   activeSidebarTab: 'nodes',
+  isSidebarOpen: true,
   isInspectorOpen: true,
   isCommandPaletteOpen: false,
   isNodeSearchOpen: false,
   isExportModalOpen: false,
-  viewMode: 'quick', // Default to beginner-friendly Quick Edit mode
+  viewMode: 'quick',
   beforeAfterMode: 'after',
   isOnboardingDismissed: localStorage.getItem('buffer_onboarding_dismissed') === 'true',
   viewport: DEFAULT_VIEWPORT,
 
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   toggleInspector: () => set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
+  setInspectorOpen: (open) => set({ isInspectorOpen: open }),
   setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
   setNodeSearchOpen: (open) => set({ isNodeSearchOpen: open }),
   setExportModalOpen: (open) => set({ isExportModalOpen: open }),

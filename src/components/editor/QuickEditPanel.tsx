@@ -3,7 +3,8 @@ import { usePipelineStore } from '../../store/pipeline.store';
 import { useEditorStore } from '../../store/editor.store';
 import { useHistoryStore } from '../../store/history.store';
 import { useProjectStore } from '../../store/project.store';
-import { Sliders, Sparkles, Sun, Contrast as ContrastIcon, Palette, RotateCcw, Plus, Image as ImageIcon } from 'lucide-react';
+import { useResponsive } from '../../hooks/useResponsive';
+import { Sliders, Sparkles, Sun, RotateCcw, Plus, Image as ImageIcon } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export const QuickEditPanel: React.FC = () => {
@@ -16,10 +17,11 @@ export const QuickEditPanel: React.FC = () => {
   const pushSnapshot = useHistoryStore((state) => state.pushSnapshot);
   const setNodeSearchOpen = useEditorStore((state) => state.setNodeSearchOpen);
 
+  const { isMobile, isTablet } = useResponsive();
+
   const assets = useProjectStore((state) => state.assets);
   const hasImage = Boolean(getImageInputNode() || assets.length > 0);
 
-  // Helper to find or create a node of a given type
   const getOrCreateNode = (type: string) => {
     let node = nodes.find((n) => n.data.definitionType === type);
     if (!node) {
@@ -30,7 +32,6 @@ export const QuickEditPanel: React.FC = () => {
     return node;
   };
 
-  // Quick Adjustment Parameters
   const brightnessNode = nodes.find((n) => n.data.definitionType === 'filter-brightness');
   const contrastNode = nodes.find((n) => n.data.definitionType === 'filter-contrast');
   const saturationNode = nodes.find((n) => n.data.definitionType === 'filter-saturation');
@@ -62,7 +63,12 @@ export const QuickEditPanel: React.FC = () => {
 
   if (!hasImage) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-neutral-500 space-y-3 bg-neutral-900 border-l border-neutral-800">
+      <div
+        className={clsx(
+          'bg-neutral-900 border-l border-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-500 space-y-3 shrink-0 select-none',
+          isMobile || isTablet ? 'w-full h-auto border-t border-l-0 border-neutral-800 p-4' : 'w-80 h-full'
+        )}
+      >
         <ImageIcon className="w-8 h-8 text-neutral-600" />
         <p className="text-xs font-semibold text-neutral-400">Upload an Image First</p>
         <p className="text-[11px] text-neutral-500 max-w-xs">
@@ -73,7 +79,12 @@ export const QuickEditPanel: React.FC = () => {
   }
 
   return (
-    <div className="w-80 h-full bg-neutral-900 border-l border-neutral-800 flex flex-col z-10 shrink-0 select-none overflow-y-auto p-4 space-y-6">
+    <div
+      className={clsx(
+        'bg-neutral-900 border-l border-neutral-800 flex flex-col z-10 shrink-0 select-none overflow-y-auto p-4 space-y-6',
+        isMobile || isTablet ? 'w-full h-auto max-h-[40vh] border-t border-l-0' : 'w-80 h-full'
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
         <div className="flex items-center gap-2">

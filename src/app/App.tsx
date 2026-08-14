@@ -9,6 +9,7 @@ import { NodeSearchModal } from '../components/editor/NodeSearchModal';
 import { CommandPalette } from '../components/editor/CommandPalette';
 import { ExportModal } from '../components/editor/ExportModal';
 import { OnboardingBanner } from '../components/ui/OnboardingBanner';
+import { MobileNoticeModal } from '../components/ui/MobileNoticeModal';
 import { useEditorStore } from '../store/editor.store';
 import { usePipelineStore } from '../store/pipeline.store';
 import { useHistoryStore } from '../store/history.store';
@@ -95,7 +96,10 @@ export const App: React.FC = () => {
   ]);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-neutral-950 text-neutral-100 overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-screen w-screen bg-neutral-950 text-neutral-100 overflow-hidden font-sans select-none relative">
+      {/* Mobile Notice Overlay for screen widths < 768px */}
+      <MobileNoticeModal />
+
       {/* Onboarding Guide Banner */}
       <OnboardingBanner />
 
@@ -103,7 +107,7 @@ export const App: React.FC = () => {
       <Toolbar />
 
       {/* Main Layout Grid */}
-      <div className="flex-1 flex flex-row overflow-hidden relative">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Left Assets / Effects Sidebar */}
         <Sidebar />
 
@@ -117,10 +121,10 @@ export const App: React.FC = () => {
           ) : (
             /* NODE GRAPH MODE: Split view (Top Canvas Preview, Bottom Node Graph) */
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <div className="h-[40%] min-h-[180px] border-b border-neutral-800 relative">
+              <div className="h-[45%] min-h-[180px] border-b border-neutral-800 relative">
                 <PreviewCanvas />
               </div>
-              <div className="flex-1 h-[60%] relative">
+              <div className="flex-1 h-[55%] relative">
                 <GraphCanvas />
               </div>
             </div>

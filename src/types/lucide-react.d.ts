@@ -51,4 +51,8 @@ declare module 'lucide-react' {
   export const Contrast: Icon;
   export const GitBranch: Icon;
   export const Wand2: Icon;
+  export const PanelLeftClose: Icon;
+  export const PanelLeft: Icon;
+  export const Monitor: Icon;
+  export const Smartphone: Icon;
 }

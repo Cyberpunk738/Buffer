@@ -4,6 +4,7 @@ import { usePipelineStore } from '../../store/pipeline.store';
 import { useProjectStore } from '../../store/project.store';
 import { useHistoryStore } from '../../store/history.store';
 import { getNodesByCategory } from '../../engine/nodes/registry';
+import { useResponsive } from '../../hooks/useResponsive';
 import { 
   Box, 
   FolderOpen, 
@@ -15,13 +16,19 @@ import {
   Image as ImageIcon,
   Sparkles,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export const Sidebar: React.FC = () => {
+  const isSidebarOpen = useEditorStore((state) => state.isSidebarOpen);
+  const toggleSidebar = useEditorStore((state) => state.toggleSidebar);
   const activeTab = useEditorStore((state) => state.activeSidebarTab);
   const setActiveTab = useEditorStore((state) => state.setActiveSidebarTab);
+
+  const { isMobile, isTablet } = useResponsive();
 
   const appendNodeToPipeline = usePipelineStore((state) => state.appendNodeToPipeline);
   const loadAssetAsInput = usePipelineStore((state) => state.loadAssetAsInput);
@@ -35,6 +42,8 @@ export const Sidebar: React.FC = () => {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   const categories = getNodesByCategory();
+
+  if (!isSidebarOpen) return null;
 
   const handleAddNode = (type: string) => {
     pushSnapshot();
@@ -82,46 +91,64 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64 h-full bg-neutral-900 border-r border-neutral-800 flex flex-col z-10 shrink-0 select-none">
-      {/* Sidebar Navigation Tabs */}
-      <div className="h-12 px-2 border-b border-neutral-800 flex items-center gap-1 bg-neutral-900/90">
-        <button
-          onClick={() => setActiveTab('nodes')}
-          className={clsx(
-            'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition-colors',
-            activeTab === 'nodes'
-              ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
-          )}
-        >
-          <Box className="w-3.5 h-3.5" />
-          Effects
-        </button>
+    <aside
+      className={clsx(
+        'h-full bg-neutral-900 border-r border-neutral-800 flex flex-col z-30 shrink-0 select-none transition-all duration-200',
+        isMobile || isTablet
+          ? 'absolute left-0 top-0 bottom-0 w-72 shadow-2xl backdrop-blur-lg bg-neutral-900/95'
+          : 'w-64 relative'
+      )}
+    >
+      {/* Sidebar Header */}
+      <div className="h-12 px-3 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/90">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 flex-1">
+          <button
+            onClick={() => setActiveTab('nodes')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors',
+              activeTab === 'nodes'
+                ? 'bg-neutral-800 text-neutral-100 shadow-sm'
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+            )}
+          >
+            <Box className="w-3.5 h-3.5" />
+            Effects
+          </button>
+
+          <button
+            onClick={() => setActiveTab('assets')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors',
+              activeTab === 'assets'
+                ? 'bg-neutral-800 text-neutral-100 shadow-sm'
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+            )}
+          >
+            <FolderOpen className="w-3.5 h-3.5" />
+            Assets
+          </button>
+
+          <button
+            onClick={() => setActiveTab('profiler')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors',
+              activeTab === 'profiler'
+                ? 'bg-neutral-800 text-neutral-100 shadow-sm'
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+            )}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            Stats
+          </button>
+        </div>
 
         <button
-          onClick={() => setActiveTab('assets')}
-          className={clsx(
-            'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition-colors',
-            activeTab === 'assets'
-              ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
-          )}
+          onClick={toggleSidebar}
+          title="Close Sidebar"
+          className="p-1.5 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200 rounded ml-1"
         >
-          <FolderOpen className="w-3.5 h-3.5" />
-          Assets
-        </button>
-
-        <button
-          onClick={() => setActiveTab('profiler')}
-          className={clsx(
-            'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-medium transition-colors',
-            activeTab === 'profiler'
-              ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
-          )}
-        >
-          <Activity className="w-3.5 h-3.5" />
-          Profiler
+          <PanelLeftClose className="w-4 h-4" />
         </button>
       </div>
 
@@ -290,6 +317,6 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </aside>
   );
 };
