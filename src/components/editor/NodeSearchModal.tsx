@@ -9,7 +9,7 @@ export const NodeSearchModal: React.FC = () => {
   const isOpen = useEditorStore((state) => state.isNodeSearchOpen);
   const setOpen = useEditorStore((state) => state.setNodeSearchOpen);
 
-  const addNode = usePipelineStore((state) => state.addNode);
+  const appendNodeToPipeline = usePipelineStore((state) => state.appendNodeToPipeline);
   const pushSnapshot = useHistoryStore((state) => state.pushSnapshot);
   const setSelectedNodeId = useEditorStore((state) => state.setSelectedNodeId);
 
@@ -34,21 +34,21 @@ export const NodeSearchModal: React.FC = () => {
 
   const handleSelectNode = (type: string) => {
     pushSnapshot();
-    const newId = addNode(type);
+    const newId = appendNodeToPipeline(type);
     if (newId) setSelectedNodeId(newId);
     setOpen(false);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 p-4">
-      <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden flex flex-col select-none">
         {/* Header Search Input */}
-        <div className="p-3 border-b border-neutral-800 flex items-center gap-3">
-          <Search className="w-4 h-4 text-neutral-400" />
+        <div className="p-3.5 border-b border-neutral-800 flex items-center gap-3">
+          <Search className="w-4 h-4 text-blue-400" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search node type (e.g. Blur, Resize, Grayscale, Blend)..."
+            placeholder="Search effect or node (e.g. Blur, Brightness, Crop, Sharpen)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {

@@ -1,18 +1,22 @@
 import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from '@xyflow/react';
-import { NodeStateData, NodeStatus } from '../engine/core/types';
+import { NodeStateData, NodeStatus, AssetItem } from '../engine/core/types';
 import { getNodeDefinition } from '../engine/nodes/registry';
 
 interface PipelineStoreState {
   nodes: Node<NodeStateData>[];
   edges: Edge[];
   
-  // Node management
+  // Pipeline Operations
   addNode: (definitionType: string, position?: { x: number; y: number }) => string | null;
+  appendNodeToPipeline: (definitionType: string) => string | null;
+  loadAssetAsInput: (asset: AssetItem) => string;
   removeNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => string | null;
   updateNodeParameter: (nodeId: string, paramId: string, value: any) => void;
   updateNodeStatus: (nodeId: string, status: NodeStatus, errorMessage?: string, executionTimeMs?: number) => void;
+  getTailNode: () => Node<NodeStateData> | null;
+  getImageInputNode: () => Node<NodeStateData> | null;
   
   // React Flow handlers
   onNodesChange: (changes: NodeChange<Node<NodeStateData>>[]) => void;
@@ -24,63 +28,9 @@ interface PipelineStoreState {
   setGraph: (nodes: Node<NodeStateData>[], edges: Edge[]) => void;
 }
 
-const INITIAL_NODES: Node<NodeStateData>[] = [
-  {
-    id: 'node-image-1',
-    type: 'processingNode',
-    position: { x: 100, y: 150 },
-    data: {
-      definitionType: 'input-image',
-      label: 'Image Input',
-      category: 'input',
-      parameters: { assetId: '' },
-      status: 'idle'
-    }
-  },
-  {
-    id: 'node-blur-1',
-    type: 'processingNode',
-    position: { x: 420, y: 150 },
-    data: {
-      definitionType: 'filter-blur',
-      label: 'Blur',
-      category: 'filter',
-      parameters: { radius: 8 },
-      status: 'idle'
-    }
-  },
-  {
-    id: 'node-output-1',
-    type: 'processingNode',
-    position: { x: 740, y: 150 },
-    data: {
-      definitionType: 'output-preview',
-      label: 'Preview',
-      category: 'output',
-      parameters: {},
-      status: 'idle'
-    }
-  }
-];
-
-const INITIAL_EDGES: Edge[] = [
-  {
-    id: 'e1-2',
-    source: 'node-image-1',
-    sourceHandle: 'output',
-    target: 'node-blur-1',
-    targetHandle: 'input',
-    animated: true
-  },
-  {
-    id: 'e2-3',
-    source: 'node-blur-1',
-    sourceHandle: 'output',
-    target: 'node-output-1',
-    targetHandle: 'input',
-    animated: true
-  }
-];
+// Start with empty nodes for clean first-time user upload experience
+const INITIAL_NODES: Node<NodeStateData>[] = [];
+const INITIAL_EDGES: Edge[] = [];
 
 export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
   nodes: INITIAL_NODES,
@@ -115,6 +65,128 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
     }));
 
     return newId;
+  },
+
+  // Auto-connects the new node to the current tail of the pipeline!
+  appendNodeToPipeline: (definitionType) => {
+    const def = getNodeDefinition(definitionType);
+    if (!def) return null;
+
+    const { nodes, edges } = get();
+    const tailNode = get().getTailNode();
+
+    let newPosition = { x: 100, y: 200 };
+    if (tailNode) {
+      newPosition = {
+        x: tailNode.position.x + 280,
+        y: tailNode.position.y
+      };
+    }
+
+    const defaultParameters: Record<string, any> = {};
+    def.parameters.forEach((param) => {
+      defaultParameters[param.id] = param.defaultValue;
+    });
+
+    const newId = `node-${def.category}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`;
+
+    const newNode: Node<NodeStateData> = {
+      id: newId,
+      type: 'processingNode',
+      position: newPosition,
+      data: {
+        definitionType,
+        label: def.name,
+        category: def.category,
+        parameters: defaultParameters,
+        status: 'idle'
+      }
+    };
+
+    const newEdges = [...edges];
+
+    // Automatically connect tail node output to new node input
+    if (tailNode) {
+      const tailDef = getNodeDefinition(tailNode.data.definitionType);
+      const outputPort = tailDef?.outputs[0]?.id || 'output';
+      const inputPort = def.inputs[0]?.id || 'input';
+
+      newEdges.push({
+        id: `e-${tailNode.id}-${newId}`,
+        source: tailNode.id,
+        sourceHandle: outputPort,
+        target: newId,
+        targetHandle: inputPort,
+        animated: true
+      });
+    }
+
+    set({
+      nodes: [...nodes, newNode],
+      edges: newEdges
+    });
+
+    return newId;
+  },
+
+  loadAssetAsInput: (asset) => {
+    const { nodes } = get();
+    const existingInputNode = nodes.find((n) => n.data.definitionType === 'input-image');
+
+    if (existingInputNode) {
+      set({
+        nodes: nodes.map((n) =>
+          n.id === existingInputNode.id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  label: asset.name,
+                  assetId: asset.id,
+                  parameters: { ...n.data.parameters, assetId: asset.id }
+                }
+              }
+            : n
+        )
+      });
+      return existingInputNode.id;
+    } else {
+      const newId = `node-input-${Date.now().toString(36)}`;
+      const newInputNode: Node<NodeStateData> = {
+        id: newId,
+        type: 'processingNode',
+        position: { x: 100, y: 200 },
+        data: {
+          definitionType: 'input-image',
+          label: asset.name,
+          category: 'input',
+          assetId: asset.id,
+          parameters: { assetId: asset.id },
+          status: 'idle'
+        }
+      };
+      set({ nodes: [newInputNode, ...nodes] });
+      return newId;
+    }
+  },
+
+  getTailNode: () => {
+    const { nodes, edges } = get();
+    if (nodes.length === 0) return null;
+
+    // Find nodes that have no outgoing edges (leaf nodes)
+    const sourceNodeIds = new Set(edges.map((e) => e.source));
+    const leafNodes = nodes.filter((n) => !sourceNodeIds.has(n.id));
+
+    if (leafNodes.length > 0) {
+      return leafNodes[leafNodes.length - 1];
+    }
+    return nodes[nodes.length - 1];
+  },
+
+  getImageInputNode: () => {
+    const { nodes } = get();
+    return nodes.find((n) => n.data.definitionType === 'input-image') || null;
   },
 
   removeNode: (nodeId) => {

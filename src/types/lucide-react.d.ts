@@ -43,4 +43,12 @@ declare module 'lucide-react' {
   export const X: Icon;
   export const Info: Icon;
   export const Settings2: Icon;
+  export const ArrowRight: Icon;
+  export const SplitSquareVertical: Icon;
+  export const FileImage: Icon;
+  export const Check: Icon;
+  export const Sun: Icon;
+  export const Contrast: Icon;
+  export const GitBranch: Icon;
+  export const Wand2: Icon;
 }

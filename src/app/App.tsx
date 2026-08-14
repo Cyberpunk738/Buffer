@@ -4,15 +4,18 @@ import { Sidebar } from '../components/sidebar/Sidebar';
 import { PreviewCanvas } from '../components/canvas/PreviewCanvas';
 import { GraphCanvas } from '../components/editor/GraphCanvas';
 import { Inspector } from '../components/inspector/Inspector';
+import { QuickEditPanel } from '../components/editor/QuickEditPanel';
 import { NodeSearchModal } from '../components/editor/NodeSearchModal';
 import { CommandPalette } from '../components/editor/CommandPalette';
+import { ExportModal } from '../components/editor/ExportModal';
+import { OnboardingBanner } from '../components/ui/OnboardingBanner';
 import { useEditorStore } from '../store/editor.store';
 import { usePipelineStore } from '../store/pipeline.store';
 import { useHistoryStore } from '../store/history.store';
 
 export const App: React.FC = () => {
+  const viewMode = useEditorStore((state) => state.viewMode);
   const setCommandPaletteOpen = useEditorStore((state) => state.setCommandPaletteOpen);
-  const setNodeSearchOpen = useEditorStore((state) => state.setNodeSearchOpen);
   const selectedNodeId = useEditorStore((state) => state.selectedNodeId);
   const setSelectedNodeId = useEditorStore((state) => state.setSelectedNodeId);
 
@@ -26,7 +29,6 @@ export const App: React.FC = () => {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing inside an input or textarea
       const target = e.target as HTMLElement;
       if (
         target &&
@@ -38,7 +40,7 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Command Palette: Ctrl+K or Cmd+K
+      // Command Palette: Ctrl+K
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCommandPaletteOpen(true);
@@ -56,7 +58,7 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Delete Node: Delete key
+      // Delete Node
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedNodeId) {
           e.preventDefault();
@@ -94,34 +96,45 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-neutral-950 text-neutral-100 overflow-hidden font-sans select-none">
-      {/* Top Application Header / Toolbar */}
+      {/* Onboarding Guide Banner */}
+      <OnboardingBanner />
+
+      {/* Header Toolbar */}
       <Toolbar />
 
-      {/* Main Workspace Layout */}
+      {/* Main Layout Grid */}
       <div className="flex-1 flex flex-row overflow-hidden relative">
-        {/* Left Assets / Nodes Sidebar */}
+        {/* Left Assets / Effects Sidebar */}
         <Sidebar />
 
-        {/* Center Split View (Top Canvas Preview, Bottom Node Graph) */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950">
-          {/* Top Half: Interactive Preview Canvas (40% height) */}
-          <div className="h-[40%] min-h-[180px] border-b border-neutral-800 relative">
-            <PreviewCanvas />
-          </div>
-
-          {/* Bottom Half: React Flow Node Graph (60% height) */}
-          <div className="flex-1 h-[60%] relative">
-            <GraphCanvas />
-          </div>
+        {/* Center Canvas & Node Graph Split View */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
+          {viewMode === 'quick' ? (
+            /* QUICK EDIT MODE: Canvas takes full center view */
+            <div className="flex-1 h-full relative">
+              <PreviewCanvas />
+            </div>
+          ) : (
+            /* NODE GRAPH MODE: Split view (Top Canvas Preview, Bottom Node Graph) */
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              <div className="h-[40%] min-h-[180px] border-b border-neutral-800 relative">
+                <PreviewCanvas />
+              </div>
+              <div className="flex-1 h-[60%] relative">
+                <GraphCanvas />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Inspector Panel */}
-        <Inspector />
+        {/* Right Side Panel: Quick Edit vs Node Inspector */}
+        {viewMode === 'quick' ? <QuickEditPanel /> : <Inspector />}
       </div>
 
-      {/* Modals & Dialogs */}
+      {/* Global Modals */}
       <NodeSearchModal />
       <CommandPalette />
+      <ExportModal />
     </div>
   );
 };

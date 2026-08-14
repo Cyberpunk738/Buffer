@@ -23,7 +23,8 @@ export const Sidebar: React.FC = () => {
   const activeTab = useEditorStore((state) => state.activeSidebarTab);
   const setActiveTab = useEditorStore((state) => state.setActiveSidebarTab);
 
-  const addNode = usePipelineStore((state) => state.addNode);
+  const appendNodeToPipeline = usePipelineStore((state) => state.appendNodeToPipeline);
+  const loadAssetAsInput = usePipelineStore((state) => state.loadAssetAsInput);
   const pushSnapshot = useHistoryStore((state) => state.pushSnapshot);
 
   const assets = useProjectStore((state) => state.assets);
@@ -37,7 +38,7 @@ export const Sidebar: React.FC = () => {
 
   const handleAddNode = (type: string) => {
     pushSnapshot();
-    addNode(type);
+    appendNodeToPipeline(type);
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: string) => {
@@ -66,7 +67,9 @@ export const Sidebar: React.FC = () => {
           dataUrl,
           createdAt: Date.now()
         };
+        pushSnapshot();
         addAsset(newAsset);
+        loadAssetAsInput(newAsset);
       };
       img.src = dataUrl;
     };
@@ -92,7 +95,7 @@ export const Sidebar: React.FC = () => {
           )}
         >
           <Box className="w-3.5 h-3.5" />
-          Nodes
+          Effects
         </button>
 
         <button
@@ -130,7 +133,7 @@ export const Sidebar: React.FC = () => {
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-neutral-500" />
             <input
               type="text"
-              placeholder="Search nodes..."
+              placeholder="Search effects & nodes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-8 pl-8 pr-3 bg-neutral-950 border border-neutral-800 rounded text-xs text-neutral-200 focus:outline-none focus:border-blue-500 placeholder-neutral-500"
@@ -157,7 +160,7 @@ export const Sidebar: React.FC = () => {
                     onClick={() => toggleCategory(category)}
                     className="w-full flex items-center justify-between text-[11px] font-bold text-neutral-400 uppercase tracking-wider px-1 py-1 hover:text-neutral-200"
                   >
-                    <span className="capitalize">{category} Nodes</span>
+                    <span className="capitalize">{category}</span>
                     {isCollapsed ? (
                       <ChevronRight className="w-3.5 h-3.5" />
                     ) : (
@@ -200,9 +203,9 @@ export const Sidebar: React.FC = () => {
       {activeTab === 'assets' && (
         <div className="flex-1 flex flex-col p-3 space-y-3 overflow-hidden">
           {/* Upload Button */}
-          <label className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors">
+          <label className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
             <Upload className="w-3.5 h-3.5" />
-            Import Image Asset
+            Upload Image Asset
             <input
               type="file"
               accept="image/png, image/jpeg, image/webp"
@@ -216,16 +219,17 @@ export const Sidebar: React.FC = () => {
             {assets.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4 text-neutral-500 space-y-2 border border-dashed border-neutral-800 rounded-lg">
                 <ImageIcon className="w-8 h-8 text-neutral-600" />
-                <p className="text-xs">No assets imported yet</p>
-                <p className="text-[10px] text-neutral-600">
-                  Import PNG, JPEG, or WebP images to use in your pipeline.
+                <p className="text-xs font-semibold text-neutral-400">No images yet</p>
+                <p className="text-[10px] text-neutral-500">
+                  Upload an image to get started with visual processing.
                 </p>
               </div>
             ) : (
               assets.map((asset) => (
                 <div
                   key={asset.id}
-                  className="group relative p-2 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center gap-3 hover:border-neutral-700"
+                  onClick={() => loadAssetAsInput(asset)}
+                  className="group relative p-2 bg-neutral-950 border border-neutral-800 hover:border-blue-500/60 rounded-lg flex items-center gap-3 cursor-pointer transition-all"
                 >
                   <img
                     src={asset.dataUrl}
@@ -233,7 +237,7 @@ export const Sidebar: React.FC = () => {
                     className="w-10 h-10 object-cover rounded bg-neutral-900 border border-neutral-800"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-neutral-200 truncate">
+                    <p className="text-xs font-medium text-neutral-200 truncate group-hover:text-blue-400">
                       {asset.name}
                     </p>
                     <p className="text-[10px] text-neutral-500 font-mono">
@@ -241,7 +245,10 @@ export const Sidebar: React.FC = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => removeAsset(asset.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeAsset(asset.id);
+                    }}
                     className="p-1 hover:bg-red-950 text-neutral-500 hover:text-red-400 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -267,25 +274,19 @@ export const Sidebar: React.FC = () => {
                 <span className="text-neutral-200">0.8 ms</span>
               </div>
               <div className="flex justify-between text-neutral-400">
-                <span>Blur Filter</span>
+                <span>Blur Effect</span>
                 <span className="text-neutral-200">4.2 ms</span>
-              </div>
-              <div className="flex justify-between text-neutral-400">
-                <span>Preview Canvas</span>
-                <span className="text-neutral-200">1.1 ms</span>
               </div>
               <div className="border-t border-neutral-800 pt-1.5 flex justify-between font-bold text-emerald-400">
                 <span>Total Pipeline</span>
-                <span>6.1 ms</span>
+                <span>5.0 ms</span>
               </div>
             </div>
           </div>
 
           <div className="p-3 bg-neutral-950/60 border border-neutral-800 rounded text-[11px] text-neutral-400 space-y-1">
-            <div className="font-semibold text-neutral-300">Cache Stats</div>
-            <div>Cache Hits: 2</div>
-            <div>Cache Misses: 1</div>
-            <div>Execution Mode: Client Web Worker</div>
+            <div className="font-semibold text-neutral-300">Run statistics</div>
+            <div>Run your pipeline to see live execution benchmarks.</div>
           </div>
         </div>
       )}

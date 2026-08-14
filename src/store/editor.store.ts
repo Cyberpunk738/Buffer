@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 
+export type ViewMode = 'quick' | 'graph';
+export type BeforeAfterMode = 'after' | 'before';
+
 interface ViewportState {
   zoom: number;
   panX: number;
@@ -14,6 +17,10 @@ interface EditorStoreState {
   isInspectorOpen: boolean;
   isCommandPaletteOpen: boolean;
   isNodeSearchOpen: boolean;
+  isExportModalOpen: boolean;
+  viewMode: ViewMode;
+  beforeAfterMode: BeforeAfterMode;
+  isOnboardingDismissed: boolean;
   viewport: ViewportState;
 
   // Actions
@@ -22,6 +29,10 @@ interface EditorStoreState {
   toggleInspector: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   setNodeSearchOpen: (open: boolean) => void;
+  setExportModalOpen: (open: boolean) => void;
+  setViewMode: (mode: ViewMode) => void;
+  setBeforeAfterMode: (mode: BeforeAfterMode) => void;
+  setOnboardingDismissed: (dismissed: boolean) => void;
   updateViewport: (updates: Partial<ViewportState>) => void;
   resetViewport: () => void;
 }
@@ -40,6 +51,10 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   isInspectorOpen: true,
   isCommandPaletteOpen: false,
   isNodeSearchOpen: false,
+  isExportModalOpen: false,
+  viewMode: 'quick', // Default to beginner-friendly Quick Edit mode
+  beforeAfterMode: 'after',
+  isOnboardingDismissed: localStorage.getItem('buffer_onboarding_dismissed') === 'true',
   viewport: DEFAULT_VIEWPORT,
 
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
@@ -47,6 +62,13 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   toggleInspector: () => set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
   setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
   setNodeSearchOpen: (open) => set({ isNodeSearchOpen: open }),
+  setExportModalOpen: (open) => set({ isExportModalOpen: open }),
+  setViewMode: (mode) => set({ viewMode: mode }),
+  setBeforeAfterMode: (mode) => set({ beforeAfterMode: mode }),
+  setOnboardingDismissed: (dismissed) => {
+    localStorage.setItem('buffer_onboarding_dismissed', String(dismissed));
+    set({ isOnboardingDismissed: dismissed });
+  },
   updateViewport: (updates) =>
     set((state) => ({ viewport: { ...state.viewport, ...updates } })),
   resetViewport: () => set({ viewport: DEFAULT_VIEWPORT }),
