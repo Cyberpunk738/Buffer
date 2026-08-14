@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { Toolbar } from '../components/toolbar/Toolbar';
 import { Sidebar } from '../components/sidebar/Sidebar';
 import { PreviewCanvas } from '../components/canvas/PreviewCanvas';
-import { GraphCanvas } from '../components/editor/GraphCanvas';
-import { Inspector } from '../components/inspector/Inspector';
 import { QuickEditPanel } from '../components/editor/QuickEditPanel';
 import { NodeSearchModal } from '../components/editor/NodeSearchModal';
 import { CommandPalette } from '../components/editor/CommandPalette';
@@ -15,13 +13,11 @@ import { usePipelineStore } from '../store/pipeline.store';
 import { useHistoryStore } from '../store/history.store';
 
 export const App: React.FC = () => {
-  const viewMode = useEditorStore((state) => state.viewMode);
   const setCommandPaletteOpen = useEditorStore((state) => state.setCommandPaletteOpen);
   const selectedNodeId = useEditorStore((state) => state.selectedNodeId);
   const setSelectedNodeId = useEditorStore((state) => state.setSelectedNodeId);
 
   const removeNode = usePipelineStore((state) => state.removeNode);
-  const duplicateNode = usePipelineStore((state) => state.duplicateNode);
 
   const undo = useHistoryStore((state) => state.undo);
   const redo = useHistoryStore((state) => state.redo);
@@ -69,17 +65,6 @@ export const App: React.FC = () => {
         }
         return;
       }
-
-      // Duplicate Node: Ctrl+D
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
-        if (selectedNodeId) {
-          e.preventDefault();
-          pushSnapshot();
-          const newId = duplicateNode(selectedNodeId);
-          if (newId) setSelectedNodeId(newId);
-        }
-        return;
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -88,7 +73,6 @@ export const App: React.FC = () => {
     setCommandPaletteOpen,
     selectedNodeId,
     removeNode,
-    duplicateNode,
     setSelectedNodeId,
     undo,
     redo,
@@ -111,28 +95,13 @@ export const App: React.FC = () => {
         {/* Left Assets / Effects Sidebar */}
         <Sidebar />
 
-        {/* Center Canvas & Node Graph Split View */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
-          {viewMode === 'quick' ? (
-            /* QUICK EDIT MODE: Canvas takes full center view */
-            <div className="flex-1 h-full relative">
-              <PreviewCanvas />
-            </div>
-          ) : (
-            /* NODE GRAPH MODE: Split view (Top Canvas Preview, Bottom Node Graph) */
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              <div className="h-[45%] min-h-[180px] border-b border-neutral-800 relative">
-                <PreviewCanvas />
-              </div>
-              <div className="flex-1 h-[55%] relative">
-                <GraphCanvas />
-              </div>
-            </div>
-          )}
+        {/* Center: Full-Screen Interactive Image Canvas */}
+        <div className="flex-1 h-full relative overflow-hidden bg-neutral-950">
+          <PreviewCanvas />
         </div>
 
-        {/* Right Side Panel: Quick Edit vs Node Inspector */}
-        {viewMode === 'quick' ? <QuickEditPanel /> : <Inspector />}
+        {/* Right Side Panel: Sleek Image Adjustments & Effect Controls */}
+        <QuickEditPanel />
       </div>
 
       {/* Global Modals */}
