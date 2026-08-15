@@ -55,4 +55,5 @@ declare module 'lucide-react' {
   export const PanelLeft: Icon;
   export const Monitor: Icon;
   export const Smartphone: Icon;
+  export const Scaling: Icon;
 }

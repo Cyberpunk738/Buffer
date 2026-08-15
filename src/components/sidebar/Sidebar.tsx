@@ -45,9 +45,18 @@ export const Sidebar: React.FC = () => {
 
   if (!isSidebarOpen) return null;
 
+  const setSelectedNodeId = useEditorStore((state) => state.setSelectedNodeId);
+  const setCropEditing = useEditorStore((state) => state.setCropEditing);
+
   const handleAddNode = (type: string) => {
     pushSnapshot();
-    appendNodeToPipeline(type);
+    const newId = appendNodeToPipeline(type);
+    if (newId) {
+      setSelectedNodeId(newId);
+    }
+    if (type === 'transform-crop') {
+      setCropEditing(true);
+    }
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: string) => {

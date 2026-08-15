@@ -19,6 +19,7 @@ interface EditorStoreState {
   isCommandPaletteOpen: boolean;
   isNodeSearchOpen: boolean;
   isExportModalOpen: boolean;
+  isCropEditing: boolean;
   viewMode: ViewMode;
   beforeAfterMode: BeforeAfterMode;
   isOnboardingDismissed: boolean;
@@ -34,6 +35,7 @@ interface EditorStoreState {
   setCommandPaletteOpen: (open: boolean) => void;
   setNodeSearchOpen: (open: boolean) => void;
   setExportModalOpen: (open: boolean) => void;
+  setCropEditing: (editing: boolean) => void;
   setViewMode: (mode: ViewMode) => void;
   setBeforeAfterMode: (mode: BeforeAfterMode) => void;
   setOnboardingDismissed: (dismissed: boolean) => void;
@@ -57,6 +59,7 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   isCommandPaletteOpen: false,
   isNodeSearchOpen: false,
   isExportModalOpen: false,
+  isCropEditing: false,
   viewMode: 'quick',
   beforeAfterMode: 'after',
   isOnboardingDismissed: localStorage.getItem('buffer_onboarding_dismissed') === 'true',
@@ -71,6 +74,7 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
   setNodeSearchOpen: (open) => set({ isNodeSearchOpen: open }),
   setExportModalOpen: (open) => set({ isExportModalOpen: open }),
+  setCropEditing: (editing) => set({ isCropEditing: editing }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setBeforeAfterMode: (mode) => set({ beforeAfterMode: mode }),
   setOnboardingDismissed: (dismissed) => {
