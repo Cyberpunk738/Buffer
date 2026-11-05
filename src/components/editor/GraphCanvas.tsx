@@ -1,20 +1,20 @@
-import React, { useCallback, useMemo } from 'react';
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
-  BackgroundVariant, 
-  Node, 
+import React, { useCallback, useMemo } from "react";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  BackgroundVariant,
+  Node,
   Edge,
   useReactFlow,
-  ReactFlowProvider
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { BaseNode } from '../nodes/BaseNode';
-import { usePipelineStore } from '../../store/pipeline.store';
-import { useEditorStore } from '../../store/editor.store';
-import { useHistoryStore } from '../../store/history.store';
-import { NodeStateData } from '../../engine/core/types';
+  ReactFlowProvider,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { BaseNode } from "../nodes/BaseNode";
+import { usePipelineStore } from "../../store/pipeline.store";
+import { useEditorStore } from "../../store/editor.store";
+import { useHistoryStore } from "../../store/history.store";
+import { NodeStateData } from "../../engine/core/types";
 
 const GraphCanvasContent: React.FC = () => {
   const nodes = usePipelineStore((state) => state.nodes);
@@ -29,38 +29,47 @@ const GraphCanvasContent: React.FC = () => {
 
   const { screenToFlowPosition } = useReactFlow();
 
-  const nodeTypes = useMemo(() => ({
-    processingNode: BaseNode
-  }), []);
+  const nodeTypes = useMemo(
+    () => ({
+      processingNode: BaseNode,
+    }),
+    [],
+  );
 
-  const handleSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
-    if (nodes.length > 0) {
-      setSelectedNodeId(nodes[0].id);
-    } else {
-      setSelectedNodeId(null);
-    }
-  }, [setSelectedNodeId]);
+  const handleSelectionChange = useCallback(
+    ({ nodes }: { nodes: Node[] }) => {
+      if (nodes.length > 0) {
+        setSelectedNodeId(nodes[0].id);
+      } else {
+        setSelectedNodeId(null);
+      }
+    },
+    [setSelectedNodeId],
+  );
 
-  const handleConnect = useCallback((params: any) => {
-    pushSnapshot();
-    onConnect(params);
-  }, [onConnect, pushSnapshot]);
+  const handleConnect = useCallback(
+    (params: any) => {
+      pushSnapshot();
+      onConnect(params);
+    },
+    [onConnect, pushSnapshot],
+  );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData('application/reactflow/nodetype');
+      const type = event.dataTransfer.getData("application/reactflow/nodetype");
       if (!type) return;
 
       const position = screenToFlowPosition({
         x: event.clientX,
-        y: event.clientY
+        y: event.clientY,
       });
 
       pushSnapshot();
@@ -69,12 +78,12 @@ const GraphCanvasContent: React.FC = () => {
         setSelectedNodeId(newId);
       }
     },
-    [screenToFlowPosition, addNode, pushSnapshot, setSelectedNodeId]
+    [screenToFlowPosition, addNode, pushSnapshot, setSelectedNodeId],
   );
 
   return (
-    <div 
-      className="w-full h-full bg-neutral-950 relative"
+    <div
+      className="w-full h-full bg-surface relative"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -92,19 +101,16 @@ const GraphCanvasContent: React.FC = () => {
         maxZoom={3.0}
         defaultEdgeOptions={{
           animated: true,
-          style: { strokeWidth: 2, stroke: '#3b82f6' }
+          style: { strokeWidth: 2, stroke: "#3b82f6" },
         }}
       >
-        <Background 
-          variant={BackgroundVariant.Dots} 
-          gap={20} 
-          size={1.5} 
-          color="#27272a" 
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1.5}
+          color="#27272a"
         />
-        <Controls 
-          showInteractive={false} 
-          className="!bottom-4 !left-4" 
-        />
+        <Controls showInteractive={false} className="!bottom-4 !left-4" />
       </ReactFlow>
     </div>
   );

@@ -1,14 +1,17 @@
-declare module 'lucide-react' {
-  import React from 'react';
-  
+declare module "lucide-react" {
+  import React from "react";
+
   export interface IconProps extends React.SVGProps<SVGSVGElement> {
     size?: number | string;
     color?: string;
     strokeWidth?: number | string;
   }
-  
+
   export type Icon = React.FC<IconProps>;
 
+  export const ShieldCheck: Icon;
+  export const Menu: Icon;
+  export const Home: Icon;
   export const Sliders: Icon;
   export const Image: Icon;
   export const Crop: Icon;

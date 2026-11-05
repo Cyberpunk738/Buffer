@@ -1,7 +1,7 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
-export type ViewMode = 'quick' | 'graph';
-export type BeforeAfterMode = 'after' | 'before';
+export type ViewMode = "quick" | "graph";
+export type BeforeAfterMode = "after" | "before";
 
 interface ViewportState {
   zoom: number;
@@ -13,7 +13,7 @@ interface ViewportState {
 
 interface EditorStoreState {
   selectedNodeId: string | null;
-  activeSidebarTab: 'nodes' | 'assets' | 'profiler';
+  activeSidebarTab: "nodes" | "assets" | "profiler";
   isSidebarOpen: boolean;
   isInspectorOpen: boolean;
   isCommandPaletteOpen: boolean;
@@ -27,7 +27,7 @@ interface EditorStoreState {
 
   // Actions
   setSelectedNodeId: (id: string | null) => void;
-  setActiveSidebarTab: (tab: 'nodes' | 'assets' | 'profiler') => void;
+  setActiveSidebarTab: (tab: "nodes" | "assets" | "profiler") => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   toggleInspector: () => void;
@@ -43,6 +43,14 @@ interface EditorStoreState {
   resetViewport: () => void;
 }
 
+const readDismissed = () => {
+  try {
+    return localStorage.getItem("buffer_onboarding_dismissed") === "true";
+  } catch {
+    return false;
+  }
+};
+
 const DEFAULT_VIEWPORT: ViewportState = {
   zoom: 1.0,
   panX: 0,
@@ -53,23 +61,25 @@ const DEFAULT_VIEWPORT: ViewportState = {
 
 export const useEditorStore = create<EditorStoreState>((set) => ({
   selectedNodeId: null,
-  activeSidebarTab: 'nodes',
+  activeSidebarTab: "nodes",
   isSidebarOpen: true,
   isInspectorOpen: true,
   isCommandPaletteOpen: false,
   isNodeSearchOpen: false,
   isExportModalOpen: false,
   isCropEditing: false,
-  viewMode: 'quick',
-  beforeAfterMode: 'after',
-  isOnboardingDismissed: localStorage.getItem('buffer_onboarding_dismissed') === 'true',
+  viewMode: "quick",
+  beforeAfterMode: "after",
+  isOnboardingDismissed: readDismissed(),
   viewport: DEFAULT_VIEWPORT,
 
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
   setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab }),
-  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  toggleSidebar: () =>
+    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
-  toggleInspector: () => set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
+  toggleInspector: () =>
+    set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
   setInspectorOpen: (open) => set({ isInspectorOpen: open }),
   setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
   setNodeSearchOpen: (open) => set({ isNodeSearchOpen: open }),
@@ -78,7 +88,11 @@ export const useEditorStore = create<EditorStoreState>((set) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
   setBeforeAfterMode: (mode) => set({ beforeAfterMode: mode }),
   setOnboardingDismissed: (dismissed) => {
-    localStorage.setItem('buffer_onboarding_dismissed', String(dismissed));
+    try {
+      localStorage.setItem("buffer_onboarding_dismissed", String(dismissed));
+    } catch {
+      /* Editing also works with storage disabled. */
+    }
     set({ isOnboardingDismissed: dismissed });
   },
   updateViewport: (updates) =>
