@@ -1,28 +1,45 @@
-import { create } from 'zustand';
-import { Node, Edge, Connection, addEdge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from '@xyflow/react';
-import { NodeStateData, NodeStatus, AssetItem } from '../engine/core/types';
-import { getNodeDefinition } from '../engine/nodes/registry';
+import { create } from "zustand";
+import {
+  Node,
+  Edge,
+  Connection,
+  addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
+  NodeChange,
+  EdgeChange,
+} from "@xyflow/react";
+import { NodeStateData, NodeStatus, AssetItem } from "../engine/core/types";
+import { getNodeDefinition } from "../engine/nodes/registry";
 
 interface PipelineStoreState {
   nodes: Node<NodeStateData>[];
   edges: Edge[];
-  
+
   // Pipeline Operations
-  addNode: (definitionType: string, position?: { x: number; y: number }) => string | null;
+  addNode: (
+    definitionType: string,
+    position?: { x: number; y: number },
+  ) => string | null;
   appendNodeToPipeline: (definitionType: string) => string | null;
   loadAssetAsInput: (asset: AssetItem) => string;
   removeNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => string | null;
   updateNodeParameter: (nodeId: string, paramId: string, value: any) => void;
-  updateNodeStatus: (nodeId: string, status: NodeStatus, errorMessage?: string, executionTimeMs?: number) => void;
+  updateNodeStatus: (
+    nodeId: string,
+    status: NodeStatus,
+    errorMessage?: string,
+    executionTimeMs?: number,
+  ) => void;
   getTailNode: () => Node<NodeStateData> | null;
   getImageInputNode: () => Node<NodeStateData> | null;
-  
+
   // React Flow handlers
   onNodesChange: (changes: NodeChange<Node<NodeStateData>>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
-  
+
   // Operations
   clearPipeline: () => void;
   setGraph: (nodes: Node<NodeStateData>[], edges: Edge[]) => void;
@@ -45,23 +62,31 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
       defaultParameters[param.id] = param.defaultValue;
     });
 
+    if (definitionType === "transform-resize") {
+      const input = get().nodes.find(
+        (n) => n.data.definitionType === "input-image",
+      );
+      defaultParameters.width = input?.data.parameters.width || 1024;
+      defaultParameters.height = input?.data.parameters.height || 1024;
+    }
+
     const newId = `node-${def.category}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`;
 
     const newNode: Node<NodeStateData> = {
       id: newId,
-      type: 'processingNode',
+      type: "processingNode",
       position,
       data: {
         definitionType,
         label: def.name,
         category: def.category,
         parameters: defaultParameters,
-        status: 'idle'
-      }
+        status: "idle",
+      },
     };
 
     set((state) => ({
-      nodes: [...state.nodes, newNode]
+      nodes: [...state.nodes, newNode],
     }));
 
     return newId;
@@ -79,7 +104,7 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
     if (tailNode) {
       newPosition = {
         x: tailNode.position.x + 280,
-        y: tailNode.position.y
+        y: tailNode.position.y,
       };
     }
 
@@ -92,24 +117,30 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
 
     const newNode: Node<NodeStateData> = {
       id: newId,
-      type: 'processingNode',
+      type: "processingNode",
       position: newPosition,
       data: {
         definitionType,
         label: def.name,
         category: def.category,
         parameters: defaultParameters,
-        status: 'idle'
-      }
+        status: "idle",
+      },
     };
+
+    if (definitionType === "transform-resize") {
+      const input = get().getImageInputNode();
+      newNode.data.parameters.width = input?.data.parameters.width || 1024;
+      newNode.data.parameters.height = input?.data.parameters.height || 1024;
+    }
 
     const newEdges = [...edges];
 
     // Automatically connect tail node output to new node input
     if (tailNode) {
       const tailDef = getNodeDefinition(tailNode.data.definitionType);
-      const outputPort = tailDef?.outputs[0]?.id || 'output';
-      const inputPort = def.inputs[0]?.id || 'input';
+      const outputPort = tailDef?.outputs[0]?.id || "output";
+      const inputPort = def.inputs[0]?.id || "input";
 
       newEdges.push({
         id: `e-${tailNode.id}-${newId}`,
@@ -117,13 +148,13 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
         sourceHandle: outputPort,
         target: newId,
         targetHandle: inputPort,
-        animated: true
+        animated: true,
       });
     }
 
     set({
       nodes: [...nodes, newNode],
-      edges: newEdges
+      edges: newEdges,
     });
 
     return newId;
@@ -131,7 +162,9 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
 
   loadAssetAsInput: (asset) => {
     const { nodes } = get();
-    const existingInputNode = nodes.find((n) => n.data.definitionType === 'input-image');
+    const existingInputNode = nodes.find(
+      (n) => n.data.definitionType === "input-image",
+    );
 
     if (existingInputNode) {
       set({
@@ -143,27 +176,36 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
                   ...n.data,
                   label: asset.name,
                   assetId: asset.id,
-                  parameters: { ...n.data.parameters, assetId: asset.id }
-                }
+                  parameters: {
+                    ...n.data.parameters,
+                    assetId: asset.id,
+                    width: asset.width,
+                    height: asset.height,
+                  },
+                },
               }
-            : n
-        )
+            : n,
+        ),
       });
       return existingInputNode.id;
     } else {
       const newId = `node-input-${Date.now().toString(36)}`;
       const newInputNode: Node<NodeStateData> = {
         id: newId,
-        type: 'processingNode',
+        type: "processingNode",
         position: { x: 100, y: 200 },
         data: {
-          definitionType: 'input-image',
+          definitionType: "input-image",
           label: asset.name,
-          category: 'input',
+          category: "input",
           assetId: asset.id,
-          parameters: { assetId: asset.id },
-          status: 'idle'
-        }
+          parameters: {
+            assetId: asset.id,
+            width: asset.width,
+            height: asset.height,
+          },
+          status: "idle",
+        },
       };
       set({ nodes: [newInputNode, ...nodes] });
       return newId;
@@ -186,13 +228,15 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
 
   getImageInputNode: () => {
     const { nodes } = get();
-    return nodes.find((n) => n.data.definitionType === 'input-image') || null;
+    return nodes.find((n) => n.data.definitionType === "input-image") || null;
   },
 
   removeNode: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.filter((n) => n.id !== nodeId),
-      edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId)
+      edges: state.edges.filter(
+        (e) => e.source !== nodeId && e.target !== nodeId,
+      ),
     }));
   },
 
@@ -206,17 +250,17 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
       id: newId,
       position: {
         x: node.position.x + 30,
-        y: node.position.y + 30
+        y: node.position.y + 30,
       },
       data: {
         ...node.data,
         parameters: { ...node.data.parameters },
-        status: 'idle'
-      }
+        status: "idle",
+      },
     };
 
     set((state) => ({
-      nodes: [...state.nodes, duplicatedNode]
+      nodes: [...state.nodes, duplicatedNode],
     }));
 
     return newId;
@@ -226,17 +270,27 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
     set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id !== nodeId) return node;
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            parameters: {
-              ...node.data.parameters,
-              [paramId]: value
-            }
+        const parameters = { ...node.data.parameters, [paramId]: value };
+        if (
+          node.data.definitionType === "transform-resize" &&
+          node.data.parameters.maintainAspectRatio &&
+          ["width", "height"].includes(paramId)
+        ) {
+          const ratio =
+            Number(node.data.parameters.width) /
+            Number(node.data.parameters.height);
+          if (Number.isFinite(ratio) && ratio > 0) {
+            if (paramId === "width")
+              parameters.height = Math.max(
+                1,
+                Math.round(Number(value) / ratio),
+              );
+            else
+              parameters.width = Math.max(1, Math.round(Number(value) * ratio));
           }
-        };
-      })
+        }
+        return { ...node, data: { ...node.data, parameters } };
+      }),
     }));
   },
 
@@ -250,28 +304,28 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
             ...node.data,
             status,
             errorMessage,
-            executionTimeMs: executionTimeMs ?? node.data.executionTimeMs
-          }
+            executionTimeMs: executionTimeMs ?? node.data.executionTimeMs,
+          },
         };
-      })
+      }),
     }));
   },
 
   onNodesChange: (changes) => {
     set((state) => ({
-      nodes: applyNodeChanges(changes, state.nodes) as Node<NodeStateData>[]
+      nodes: applyNodeChanges(changes, state.nodes) as Node<NodeStateData>[],
     }));
   },
 
   onEdgesChange: (changes) => {
     set((state) => ({
-      edges: applyEdgeChanges(changes, state.edges)
+      edges: applyEdgeChanges(changes, state.edges),
     }));
   },
 
   onConnect: (connection) => {
     set((state) => ({
-      edges: addEdge({ ...connection, animated: true }, state.edges)
+      edges: addEdge({ ...connection, animated: true }, state.edges),
     }));
   },
 
@@ -281,5 +335,5 @@ export const usePipelineStore = create<PipelineStoreState>((set, get) => ({
 
   setGraph: (nodes, edges) => {
     set({ nodes, edges });
-  }
+  },
 }));

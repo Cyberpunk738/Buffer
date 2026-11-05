@@ -1,9 +1,11 @@
-import { create } from 'zustand';
-import { Node, Edge } from '@xyflow/react';
-import { NodeStateData } from '../engine/core/types';
-import { usePipelineStore } from './pipeline.store';
+import { create } from "zustand";
+import { Node, Edge } from "@xyflow/react";
+import { AssetItem, NodeStateData } from "../engine/core/types";
+import { usePipelineStore } from "./pipeline.store";
+import { useProjectStore } from "./project.store";
 
 interface HistorySnapshot {
+  assets: AssetItem[];
   nodes: Node<NodeStateData>[];
   edges: Edge[];
 }
@@ -33,8 +35,9 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
 
     const { nodes, edges } = usePipelineStore.getState();
     const snapshot: HistorySnapshot = {
+      assets: [...useProjectStore.getState().assets],
       nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges))
+      edges: JSON.parse(JSON.stringify(edges)),
     };
 
     set((state) => {
@@ -44,7 +47,7 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
       }
       return {
         past,
-        future: [] // Clear redo stack on new change
+        future: [], // Clear redo stack on new change
       };
     });
   },
@@ -54,24 +57,24 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
     if (past.length === 0) return;
 
     const currentSnapshot: HistorySnapshot = {
+      assets: [...useProjectStore.getState().assets],
       nodes: JSON.parse(JSON.stringify(usePipelineStore.getState().nodes)),
-      edges: JSON.parse(JSON.stringify(usePipelineStore.getState().edges))
+      edges: JSON.parse(JSON.stringify(usePipelineStore.getState().edges)),
     };
 
     const previousSnapshot = past[past.length - 1];
     const newPast = past.slice(0, past.length - 1);
 
     set((state) => ({
-      isTracking: false,
+      isTracking: true,
       past: newPast,
-      future: [currentSnapshot, ...state.future]
+      future: [currentSnapshot, ...state.future],
     }));
 
-    usePipelineStore.getState().setGraph(previousSnapshot.nodes, previousSnapshot.edges);
-
-    setTimeout(() => {
-      set({ isTracking: true });
-    }, 50);
+    useProjectStore.getState().setAssets(previousSnapshot.assets);
+    usePipelineStore
+      .getState()
+      .setGraph(previousSnapshot.nodes, previousSnapshot.edges);
   },
 
   redo: () => {
@@ -79,27 +82,27 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
     if (future.length === 0) return;
 
     const currentSnapshot: HistorySnapshot = {
+      assets: [...useProjectStore.getState().assets],
       nodes: JSON.parse(JSON.stringify(usePipelineStore.getState().nodes)),
-      edges: JSON.parse(JSON.stringify(usePipelineStore.getState().edges))
+      edges: JSON.parse(JSON.stringify(usePipelineStore.getState().edges)),
     };
 
     const nextSnapshot = future[0];
     const newFuture = future.slice(1);
 
     set((state) => ({
-      isTracking: false,
+      isTracking: true,
       past: [...state.past, currentSnapshot],
-      future: newFuture
+      future: newFuture,
     }));
 
-    usePipelineStore.getState().setGraph(nextSnapshot.nodes, nextSnapshot.edges);
-
-    setTimeout(() => {
-      set({ isTracking: true });
-    }, 50);
+    useProjectStore.getState().setAssets(nextSnapshot.assets);
+    usePipelineStore
+      .getState()
+      .setGraph(nextSnapshot.nodes, nextSnapshot.edges);
   },
 
   canUndo: () => get().past.length > 0,
   canRedo: () => get().future.length > 0,
-  clearHistory: () => set({ past: [], future: [] })
+  clearHistory: () => set({ past: [], future: [] }),
 }));
